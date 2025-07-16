@@ -35,6 +35,10 @@ bateaux_db: List[Bateau] = []
 capitaines_db: List[Capitaine] = []
 
 # --------- Routes BATEAU ----------
+@app.post("/bateaux", response_model=Bateau)
+def ajouter_bateau(bateau: Bateau):
+    bateaux_db.append(bateau)
+    return bateau
 @app.get("/bateaux", response_model=List[Bateau])
 def lister_bateaux():
     return bateaux_db
@@ -46,10 +50,7 @@ def lire_bateau(bateau_id: int):
             return bateau
     raise HTTPException(status_code=404, detail="Bateau non trouvé")
 
-@app.post("/bateaux", response_model=Bateau)
-def ajouter_bateau(bateau: Bateau):
-    bateaux_db.append(bateau)
-    return bateau
+
 
 @app.put("/bateaux/{bateau_id}", response_model=Bateau)
 def modifier_bateau(bateau_id: int, updated: Bateau):
@@ -68,6 +69,10 @@ def supprimer_bateau(bateau_id: int):
     raise HTTPException(status_code=404, detail="Bateau non trouvé")
 
 # --------- Routes CAPITAINE ----------
+@app.post("/capitaines", response_model=Capitaine)
+def ajouter_capitaine(capitaine: Capitaine):
+    capitaines_db.append(capitaine)
+    return capitaine
 @app.get("/capitaines", response_model=List[Capitaine])
 def lister_capitaines():
     return capitaines_db
@@ -79,10 +84,7 @@ def lire_capitaine(capitaine_id: int):
             return capitaine
     raise HTTPException(status_code=404, detail="Capitaine non trouvé")
 
-@app.post("/capitaines", response_model=Capitaine)
-def ajouter_capitaine(capitaine: Capitaine):
-    capitaines_db.append(capitaine)
-    return capitaine
+
 
 @app.put("/capitaines/{capitaine_id}", response_model=Capitaine)
 def modifier_capitaine(capitaine_id: int, updated: Capitaine):
@@ -103,6 +105,21 @@ def supprimer_capitaine(capitaine_id: int):
                     bateau.capitaine_id = None
             return {"message": f"Capitaine {capitaine_id} supprimé"}
     raise HTTPException(status_code=404, detail="Capitaine non trouvé")
+
+@app.post("/trajets", response_model=Trajet)
+def ajouter_trajet(trajet: Trajet):
+    # Vérifie si le bateau existe
+    bateau = next((b for b in bateaux_db if b.id == trajet.bateau_id), None)
+    if not bateau:
+        raise HTTPException(status_code=404, detail="Bateau non trouvé")
+
+    # Vérifie si le capitaine existe
+    capitaine = next((c for c in capitaines_db if c.id == trajet.capitaine_id), None)
+    if not capitaine:
+        raise HTTPException(status_code=404, detail="Capitaine non trouvé")
+
+    trajets_db.append(trajet)
+    return trajet
 
 # ✅ Liste des bateaux en service
 @app.get("/bateaux/en_service", response_model=List[Bateau])
@@ -146,20 +163,7 @@ def bateaux_du_capitaine(capitaine_id: int):
     return [b for b in bateaux_db if b.capitaine_id == capitaine_id]
 
 # --------- ROUTES TRAJETS ----------
-@app.post("/trajets", response_model=Trajet)
-def ajouter_trajet(trajet: Trajet):
-    # Vérifie si le bateau existe
-    bateau = next((b for b in bateaux_db if b.id == trajet.bateau_id), None)
-    if not bateau:
-        raise HTTPException(status_code=404, detail="Bateau non trouvé")
 
-    # Vérifie si le capitaine existe
-    capitaine = next((c for c in capitaines_db if c.id == trajet.capitaine_id), None)
-    if not capitaine:
-        raise HTTPException(status_code=404, detail="Capitaine non trouvé")
-
-    trajets_db.append(trajet)
-    return trajet
 
 @app.get("/trajets", response_model=List[Trajet])
 def lister_trajets():
@@ -187,13 +191,7 @@ def modifier_trajet(trajet_id: int, updated: Trajet):
             return updated
     raise HTTPException(status_code=404, detail="Trajet non trouvé")
 
-@app.delete("/trajets/{trajet_id}")
-def supprimer_trajet(trajet_id: int):
-    for i, t in enumerate(trajets_db):
-        if t.id == trajet_id:
-            del trajets_db[i]
-            return {"message": f"Trajet {trajet_id} supprimé"}
-    raise HTTPException(status_code=404, detail="Trajet non trouvé")
+
 
 @app.get("/trajets/recherche", response_model=List[Trajet])
 def recherche_par_port_depart(depart: str = Query(..., alias="depart")):
@@ -212,5 +210,12 @@ def trier_trajets_par_distance(ordre: str = Query("asc", alias="ordre")):
         key=lambda t: t.distance,
         reverse=(ordre == "desc")
     )
+@app.delete("/trajets/{trajet_id}")
+def supprimer_trajet(trajet_id: int):
+    for i, t in enumerate(trajets_db):
+        if t.id == trajet_id:
+            del trajets_db[i]
+            return {"message": f"Trajet {trajet_id} supprimé"}
+    raise HTTPException(status_code=404, detail="Trajet non trouvé")
 
 

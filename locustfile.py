@@ -38,6 +38,22 @@ class BateauCapitaineUser(HttpUser):
             self.last_bateau_id = bateau_id
 
     @task(2)
+    def creer_trajet(self):
+        if self.last_bateau_id and self.last_capitaine_id:
+            trajet_id = random.randint(1000, 9999)
+            data = {
+                "id": trajet_id,
+                "bateau_id": self.last_bateau_id,
+                "capitaine_id": self.last_capitaine_id,
+                "depart": random.choice(["Marseille", "Tanger", "Gênes"]),
+                "arrivee": random.choice(["Casablanca", "Nice", "Palermo"]),
+                "distance": round(random.uniform(100.0, 1500.0), 2)
+            }
+            response = self.client.post("/trajets", json=data)
+            if response.status_code == 200:
+                self.last_trajet_id = trajet_id
+
+    @task(2)
     def lister_bateaux(self):
         self.client.get("/bateaux")
 
@@ -73,11 +89,7 @@ class BateauCapitaineUser(HttpUser):
             }
             self.client.put(f"/bateaux/{self.last_bateau_id}", json=data)
 
-    @task(1)
-    def supprimer_bateau(self):
-        if self.last_bateau_id:
-            self.client.delete(f"/bateaux/{self.last_bateau_id}")
-            self.last_bateau_id = None
+    
 
     @task(1)
     def modifier_capitaine(self):
@@ -90,11 +102,6 @@ class BateauCapitaineUser(HttpUser):
             }
             self.client.put(f"/capitaines/{self.last_capitaine_id}", json=data)
 
-    @task(1)
-    def supprimer_capitaine(self):
-        if self.last_capitaine_id:
-            self.client.delete(f"/capitaines/{self.last_capitaine_id}")
-            self.last_capitaine_id = None
 
     @task(1)
     def lier_capitaine_au_bateau(self):
@@ -108,22 +115,7 @@ class BateauCapitaineUser(HttpUser):
 
     # 🔽 TRAJETS 🔽
 
-    @task(2)
-    def creer_trajet(self):
-        if self.last_bateau_id and self.last_capitaine_id:
-            trajet_id = random.randint(1000, 9999)
-            data = {
-                "id": trajet_id,
-                "bateau_id": self.last_bateau_id,
-                "capitaine_id": self.last_capitaine_id,
-                "depart": random.choice(["Marseille", "Tanger", "Gênes"]),
-                "arrivee": random.choice(["Casablanca", "Nice", "Palermo"]),
-                "distance": round(random.uniform(100.0, 1500.0), 2)
-            }
-            response = self.client.post("/trajets", json=data)
-            if response.status_code == 200:
-                self.last_trajet_id = trajet_id
-
+   
     @task(1)
     def lister_trajets(self):
         self.client.get("/trajets")
@@ -141,11 +133,7 @@ class BateauCapitaineUser(HttpUser):
             }
             self.client.put(f"/trajets/{self.last_trajet_id}", json=data)
 
-    @task(1)
-    def supprimer_trajet(self):
-        if self.last_trajet_id:
-            self.client.delete(f"/trajets/{self.last_trajet_id}")
-            self.last_trajet_id = None
+
 
     @task(1)
     def trajets_du_capitaine(self):
@@ -170,3 +158,22 @@ class BateauCapitaineUser(HttpUser):
     def trier_trajets_par_distance(self):
         ordre = random.choice(["asc", "desc"])
         self.client.get(f"/trajets/tri-distance?ordre={ordre}")
+
+    @task(1)
+    def supprimer_bateau(self):
+        if self.last_bateau_id:
+            self.client.delete(f"/bateaux/{self.last_bateau_id}")
+            self.last_bateau_id = None
+
+    @task(1)
+    def supprimer_capitaine(self):
+        if self.last_capitaine_id:
+            self.client.delete(f"/capitaines/{self.last_capitaine_id}")
+            self.last_capitaine_id = None
+
+
+    @task(1)
+    def supprimer_trajet(self):
+        if self.last_trajet_id:
+            self.client.delete(f"/trajets/{self.last_trajet_id}")
+            self.last_trajet_id = None
